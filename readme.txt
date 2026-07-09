@@ -1,5 +1,5 @@
 === Gravity Forms Krayin CRM Add-On ===
-Contributors: devinsight
+Contributors: paigejulianne
 Tags: gravity forms, krayin, crm
 Requires at least: 6.0
 Requires PHP: 7.4

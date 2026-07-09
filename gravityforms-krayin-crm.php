@@ -4,7 +4,7 @@
  * Plugin URI: https://crm.devinsight.site/
  * Description: Sends Gravity Forms submissions to Krayin CRM as Leads or Contacts via Krayin's REST API.
  * Version: 1.0.0
- * Author: Devinsight
+ * Author: Paige Julianne Sullivan <paige@paigejulianne.com>
  * License: GPL-2.0+
  * Text Domain: gravityforms-krayin-crm
  * Domain Path: /languages
