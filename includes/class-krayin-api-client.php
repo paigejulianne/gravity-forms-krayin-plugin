@@ -246,6 +246,32 @@ class Krayin_API_Client {
 	}
 
 	/**
+	 * @return array|WP_Error List of ['id' => int, 'name' => string] lead pipeline stages,
+	 *                        flattened across all pipelines and prefixed with the pipeline name.
+	 */
+	public function get_stages() {
+		$result = $this->request( 'GET', 'settings/pipelines?pagination=0' );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		$pipelines = isset( $result['data'] ) ? $result['data'] : array();
+		$stages    = array();
+
+		foreach ( (array) $pipelines as $pipeline ) {
+			foreach ( (array) ( $pipeline['stages'] ?? array() ) as $stage ) {
+				$stages[] = array(
+					'id'   => $stage['id'] ?? null,
+					'name' => ( $pipeline['name'] ?? '' ) . ' → ' . ( $stage['name'] ?? '' ),
+				);
+			}
+		}
+
+		return $stages;
+	}
+
+	/**
 	 * @param array $data Person payload (name, emails, contact_numbers, organization_id, ...).
 	 *
 	 * @return array|WP_Error Decoded response containing the created person under 'data'.

@@ -157,9 +157,10 @@ class GF_Krayin_CRM extends GFFeedAddOn {
 			return;
 		}
 
-		// Fresh, valid credentials: drop any cached source/type choice lists tied to the old credentials.
+		// Fresh, valid credentials: drop any cached source/type/stage choice lists tied to the old credentials.
 		delete_transient( $this->get_choices_cache_key( 'sources', $url, $email, $value ) );
 		delete_transient( $this->get_choices_cache_key( 'types', $url, $email, $value ) );
+		delete_transient( $this->get_choices_cache_key( 'stages', $url, $email, $value ) );
 	}
 
 	// # FEED SETTINGS (per-form field mapping) -------------------------------------------------------------------
@@ -294,6 +295,18 @@ class GF_Krayin_CRM extends GFFeedAddOn {
 						'type'       => 'select',
 						'required'   => true,
 						'choices'    => $this->get_krayin_choices( 'types' ),
+					),
+					array(
+						'name'       => 'leadPipelineStageId',
+						'label'      => esc_html__( 'Lead Pipeline Stage', 'gravityforms-krayin-crm' ),
+						'type'       => 'select',
+						'required'   => true,
+						'choices'    => $this->get_krayin_choices( 'stages' ),
+						'tooltip'    => sprintf(
+							'<h6>%s</h6>%s',
+							esc_html__( 'Lead Pipeline Stage', 'gravityforms-krayin-crm' ),
+							esc_html__( 'Krayin requires every Lead to start in a pipeline stage. Choose the stage new Leads from this form should land in.', 'gravityforms-krayin-crm' )
+						),
 					),
 				),
 			),
@@ -442,11 +455,12 @@ class GF_Krayin_CRM extends GFFeedAddOn {
 			return $entry;
 		}
 
-		$lead_source_id = (int) rgars( $feed, 'meta/leadSourceId' );
-		$lead_type_id   = (int) rgars( $feed, 'meta/leadTypeId' );
+		$lead_source_id        = (int) rgars( $feed, 'meta/leadSourceId' );
+		$lead_type_id          = (int) rgars( $feed, 'meta/leadTypeId' );
+		$lead_pipeline_stage_id = (int) rgars( $feed, 'meta/leadPipelineStageId' );
 
-		if ( empty( $lead_source_id ) || empty( $lead_type_id ) ) {
-			$error = esc_html__( 'Krayin CRM: this feed is missing a Lead Source or Lead Type. Edit the feed and select both.', 'gravityforms-krayin-crm' );
+		if ( empty( $lead_source_id ) || empty( $lead_type_id ) || empty( $lead_pipeline_stage_id ) ) {
+			$error = esc_html__( 'Krayin CRM: this feed is missing a Lead Source, Lead Type, or Lead Pipeline Stage. Edit the feed and select all three.', 'gravityforms-krayin-crm' );
 
 			$this->add_feed_error( $error, $feed, $entry, $form );
 
@@ -469,6 +483,7 @@ class GF_Krayin_CRM extends GFFeedAddOn {
 			'lead_value'      => '' !== $lead_value ? $lead_value : 0,
 			'lead_source_id'  => $lead_source_id,
 			'lead_type_id'    => $lead_type_id,
+			'lead_pipeline_stage_id' => $lead_pipeline_stage_id,
 			'person'          => $person,
 		);
 
@@ -589,7 +604,14 @@ class GF_Krayin_CRM extends GFFeedAddOn {
 		}
 
 		$client = new Krayin_API_Client( $url, $email, $password );
-		$items  = 'types' === $kind ? $client->get_types() : $client->get_sources();
+
+		if ( 'types' === $kind ) {
+			$items = $client->get_types();
+		} elseif ( 'stages' === $kind ) {
+			$items = $client->get_stages();
+		} else {
+			$items = $client->get_sources();
+		}
 
 		if ( is_wp_error( $items ) ) {
 			return array(
